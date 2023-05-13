@@ -1,6 +1,6 @@
 {
-  "name": "@unisat/ord-utils",
-  "version": "0.2.8",
+  "name": "@safematrix/ord-utils",
+  "version": "0.2.9",
   "description": "Ordinals Utils",
   "keywords": [
     "bitcoin",
@@ -21,7 +21,8 @@
   "types": "lib/index.d.ts",
   "files": [
     "/es",
-    "/lib"
+    "/lib",
+    "/packages"
   ],
   "scripts": {
     "build": "npm run build:cjs && npm run build:esm",
@@ -35,8 +36,7 @@
     "bignumber.js": "^9.1.1",
     "bitcoinjs-lib": "^6.1.0",
     "bs58check": "^2.1.2",
-    "ecpair": "^2.1.0",
-    "tiny-secp256k1": "^2.2.1"
+    "ecpair": "^2.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.16.7",

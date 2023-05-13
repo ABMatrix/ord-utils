@@ -1,6 +1,6 @@
 {
   "name": "@safematrix/ord-utils",
-  "version": "0.2.10",
+  "version": "0.2.12",
   "description": "Ordinals Utils",
   "keywords": [
     "bitcoin",
@@ -36,7 +36,8 @@
     "bignumber.js": "^9.1.1",
     "bitcoinjs-lib": "^6.1.0",
     "bs58check": "^2.1.2",
-    "ecpair": "^2.1.0"
+    "ecpair": "^2.1.0",
+    "uint8array-tools": "^0.0.7"
   },
   "devDependencies": {
     "@babel/core": "^7.16.7",

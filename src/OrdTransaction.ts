@@ -1,9 +1,10 @@
 import { OrdUnspendOutput, UTXO_DUST } from "./OrdUnspendOutput";
 import * as bitcoin from "bitcoinjs-lib";
-import ECPairFactory from "ecpair";
-import * as ecc from "tiny-secp256k1";
-bitcoin.initEccLib(ecc);
-const ECPair = ECPairFactory(ecc);
+import { initWasm } from "../packages/tiny-secp256k1";
+
+const INPUT_RATE = 68
+const OUTPUT_RATE = 31
+
 interface TxInput {
   data: {
     hash: string;
@@ -19,11 +20,10 @@ interface TxOutput {
   value: number;
 }
 
-export const validator = (
-  pubkey: Buffer,
-  msghash: Buffer,
-  signature: Buffer
-): boolean => ECPair.fromPublicKey(pubkey).verify(msghash, signature);
+interface OpReturnOutput {
+  script: Buffer;
+  value: number;
+}
 
 export interface UnspentOutput {
   txId: string;
@@ -117,17 +117,24 @@ export function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput {
 export class OrdTransaction {
   private inputs: TxInput[] = [];
   public outputs: TxOutput[] = [];
+  public opReturnOutputs: OpReturnOutput[] = [];
   private changeOutputIndex = -1;
   private wallet: any;
   public changedAddress: string;
   private network: bitcoin.Network = bitcoin.networks.bitcoin;
   private feeRate: number;
   private pubkey: string;
+  
   constructor(wallet: any, network: any, pubkey: string, feeRate?: number) {
     this.wallet = wallet;
     this.network = network;
     this.pubkey = pubkey;
     this.feeRate = feeRate || 5;
+  }
+
+  async initBitcoin() {
+    const ecc = await initWasm()
+    bitcoin.initEccLib(ecc);
   }
 
   setChangeAddress(address: string) {
@@ -163,14 +170,15 @@ export class OrdTransaction {
   }
 
   async calNetworkFee() {
-    const psbt = await this.createSignedPsbt();
-    let txSize = psbt.extractTransaction(true).toBuffer().length;
-    psbt.data.inputs.forEach((v) => {
-      if (v.finalScriptWitness) {
-        txSize -= v.finalScriptWitness.length * 0.75;
-      }
-    });
-    const fee = Math.ceil(txSize * this.feeRate);
+    // const psbt = await this.createSignedPsbt();
+    // let txSize = psbt.extractTransaction(true).toBuffer().length;
+    // psbt.data.inputs.forEach((v) => {
+    //   if (v.finalScriptWitness) {
+    //     txSize -= v.finalScriptWitness.length * 0.75;
+    //   }
+    // });
+    // const fee = Math.ceil(txSize * this.feeRate);
+    const fee = Math.ceil(((INPUT_RATE * this.inputs.length) + OUTPUT_RATE * this.outputs.length + 10.5) * this.feeRate)
     return fee;
   }
 
@@ -179,6 +187,18 @@ export class OrdTransaction {
       address,
       value,
     });
+  }
+
+  addOpRetunOutput(data: string) {
+      const hexString = data.startsWith('0x') ? data.slice(2) : data
+      const embedData = Buffer.from(hexString, 'hex')
+      const embed = bitcoin.payments.embed({ data: [embedData] })
+      console.log(embed, embed.output)
+      this.opReturnOutputs.push({
+        script: embed.output!,
+        value: UTXO_DUST,
+      })
+
   }
 
   getOutput(index: number) {
@@ -225,10 +245,9 @@ export class OrdTransaction {
     this.outputs.forEach((v) => {
       psbt.addOutput(v);
     });
-
-    await this.wallet.signPsbt(psbt);
-
-    return psbt;
+    this.opReturnOutputs.forEach((v) => {psbt.addOutput(v)})
+    const res = await this.wallet.signPsbt(psbt.toBuffer().toString("hex"));
+    return bitcoin.Psbt.fromHex(res);
   }
 
   async generate(autoAdjust: boolean) {

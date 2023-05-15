@@ -127,6 +127,7 @@ export async function createSendOrd({
   feeRate,
   outputValue,
   dump,
+  data
 }: {
   utxos: UnspentOutput[];
   toAddress: string;
@@ -138,6 +139,7 @@ export async function createSendOrd({
   feeRate?: number;
   outputValue: number;
   dump?: boolean;
+  data?: string
 }) {
   const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
   tx.setChangeAddress(changeAddress);
@@ -167,6 +169,8 @@ export async function createSendOrd({
       break;
     }
   }
+
+  if(data) tx.addOpRetunOutput(data)
 
   if (!found) {
     throw new Error("inscription not found.");
@@ -220,7 +224,15 @@ export async function createSendOrd({
     // remove dummy output
     tx.removeChangeOutput();
   }
-
+  if (data) {
+    try {
+    } catch (error) {
+      if (error instanceof Error && this.developMode) {
+        console.log(error.message)
+      }
+      throw new Error('Invalid transaction data, it should be a hex string start with 0x')
+    }
+  }
   const psbt = await tx.createSignedPsbt();
   if (dump) {
     tx.dumpTx(psbt);
@@ -239,6 +251,7 @@ export async function createSendMultiOrds({
   pubkey,
   feeRate,
   dump,
+  data
 }: {
   utxos: UnspentOutput[];
   toAddress: string;
@@ -249,8 +262,10 @@ export async function createSendMultiOrds({
   pubkey: string;
   feeRate?: number;
   dump?: boolean;
+  data?: string
 }) {
   const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
+  await tx.initBitcoin()
   tx.setChangeAddress(changeAddress);
 
   const nonOrdUtxos: UnspentOutput[] = [];
@@ -262,6 +277,8 @@ export async function createSendMultiOrds({
       nonOrdUtxos.push(v);
     }
   });
+
+  if(data) tx.addOpRetunOutput(data)
 
   // find NFT
   let foundedCount = 0;

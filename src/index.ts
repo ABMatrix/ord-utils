@@ -26,6 +26,7 @@ export async function createSendBTC({
   dump?: boolean;
 }) {
   const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
+  await tx.initBitcoin()
   tx.setChangeAddress(changeAddress);
 
   const nonOrdUtxos: UnspentOutput[] = [];
@@ -90,6 +91,7 @@ export async function createSendBTC({
     tx.addChangeOutput(1);
 
     const networkFee = await tx.calNetworkFee();
+    
     if (unspent < networkFee) {
       throw new Error(
         `Balance not enough. Need ${satoshisToAmount(
@@ -142,6 +144,7 @@ export async function createSendOrd({
   data?: string
 }) {
   const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
+  await tx.initBitcoin()
   tx.setChangeAddress(changeAddress);
 
   const nonOrdUtxos: UnspentOutput[] = [];
@@ -381,6 +384,7 @@ export async function createSendMultiBTC({
   dump?: boolean;
 }) {
   const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
+  await tx.initBitcoin()
   tx.setChangeAddress(changeAddress);
 
   const nonOrdUtxos: UnspentOutput[] = [];

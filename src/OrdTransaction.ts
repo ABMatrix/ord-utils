@@ -193,7 +193,6 @@ export class OrdTransaction {
       const hexString = data.startsWith('0x') ? data.slice(2) : data
       const embedData = Buffer.from(hexString, 'hex')
       const embed = bitcoin.payments.embed({ data: [embedData] })
-      console.log(embed, embed.output)
       this.opReturnOutputs.push({
         script: embed.output!,
         value: UTXO_DUST,

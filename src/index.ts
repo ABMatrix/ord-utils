@@ -13,6 +13,7 @@ export async function createSendBTC({
   feeRate,
   pubkey,
   dump,
+  data
 }: {
   utxos: UnspentOutput[];
   toAddress: string;
@@ -24,6 +25,7 @@ export async function createSendBTC({
   feeRate?: number;
   pubkey: string;
   dump?: boolean;
+  data?: string
 }) {
   const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
   await tx.initBitcoin()
@@ -60,6 +62,8 @@ export async function createSendBTC({
       break;
     }
   }
+  
+  if(data) tx.addOpRetunOutput(data)
 
   if (nonOrdUtxos.length === 0) {
     throw new Error("Balance not enough");
@@ -248,6 +252,7 @@ export async function createSendMultiOrds({
   utxos,
   toAddress,
   toOrdIds,
+  receivers,
   wallet,
   network,
   changeAddress,
@@ -259,6 +264,10 @@ export async function createSendMultiOrds({
   utxos: UnspentOutput[];
   toAddress: string;
   toOrdIds: string[];
+  receivers: {
+    address: string;
+    amount: number;
+  }[];
   wallet: any;
   network: any;
   changeAddress: string;
@@ -299,6 +308,10 @@ export async function createSendMultiOrds({
       foundedCount++;
     }
   }
+  
+  receivers.forEach((v) => {
+    tx.addOutput(v.address, v.amount);
+  });
 
   if (foundedCount != toOrdIds.length) {
     throw new Error("inscription not found.");
@@ -370,6 +383,7 @@ export async function createSendMultiBTC({
   feeRate,
   pubkey,
   dump,
+  data
 }: {
   utxos: UnspentOutput[];
   receivers: {
@@ -382,6 +396,7 @@ export async function createSendMultiBTC({
   feeRate?: number;
   pubkey: string;
   dump?: boolean;
+  data?: string
 }) {
   const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
   await tx.initBitcoin()
@@ -420,6 +435,8 @@ export async function createSendMultiBTC({
       break;
     }
   }
+
+  if(data) tx.addOpRetunOutput(data)
 
   if (nonOrdUtxos.length === 0) {
     throw new Error("Balance not enough");

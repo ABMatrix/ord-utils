@@ -5,6 +5,6 @@ dist/
 tests/
 docs/build
 docs/source/_build
-lib
+.lib
 es 
 umd

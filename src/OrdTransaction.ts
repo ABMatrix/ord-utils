@@ -1,5 +1,6 @@
 import { OrdUnspendOutput, UTXO_DUST } from "./OrdUnspendOutput";
 import * as bitcoin from "bitcoinjs-lib";
+
 import { initWasm } from "../packages/tiny-secp256k1";
 
 const INPUT_RATE = 68
@@ -36,6 +37,8 @@ export interface UnspentOutput {
     id: string;
     offset: number;
   }[];
+  tapMerkelRoot?: string;
+  tapLeafScript?: any
 }
 export enum AddressType {
   P2PKH,

@@ -34,9 +34,12 @@
   },
   "dependencies": {
     "bignumber.js": "^9.1.1",
+    "bip32": "^4.0.0",
     "bitcoinjs-lib": "^6.1.0",
     "bs58check": "^2.1.2",
-    "uint8array-tools": "^0.0.7"
+    "randombytes": "^2.1.0",
+    "uint8array-tools": "^0.0.7",
+    "varuint-bitcoin": "^1.1.2"
   },
   "devDependencies": {
     "@babel/core": "^7.16.7",

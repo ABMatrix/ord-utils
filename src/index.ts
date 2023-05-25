@@ -1,6 +1,10 @@
-import { OrdTransaction, UnspentOutput } from "./OrdTransaction";
-import { OrdUnspendOutput, UTXO_DUST } from "./OrdUnspendOutput";
-import { satoshisToAmount } from "./utils";
+import { initWasm } from "../packages/tiny-secp256k1/lib";
+import { OrdTransaction, UnspentOutput, toXOnly } from "./OrdTransaction";
+import { UTXO_DUST } from "./OrdUnspendOutput";
+import { satoshisToAmount, witnessStackToScriptWitness } from "./utils";
+import * as bitcoin from "bitcoinjs-lib";
+import BIP32Factory from "bip32";
+const rng = require("randombytes");
 
 export async function createSendBTC({
   utxos,
@@ -13,7 +17,7 @@ export async function createSendBTC({
   feeRate,
   pubkey,
   dump,
-  data
+  data,
 }: {
   utxos: UnspentOutput[];
   toAddress: string;
@@ -25,10 +29,10 @@ export async function createSendBTC({
   feeRate?: number;
   pubkey: string;
   dump?: boolean;
-  data?: string
+  data?: string;
 }) {
   const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
-  await tx.initBitcoin()
+  await tx.initBitcoin();
   tx.setChangeAddress(changeAddress);
 
   const nonOrdUtxos: UnspentOutput[] = [];
@@ -62,8 +66,8 @@ export async function createSendBTC({
       break;
     }
   }
-  
-  if(data) tx.addOpRetunOutput(data)
+
+  if (data) tx.addOpRetunOutput(data);
 
   if (nonOrdUtxos.length === 0) {
     throw new Error("Balance not enough");
@@ -95,7 +99,7 @@ export async function createSendBTC({
     tx.addChangeOutput(1);
 
     const networkFee = await tx.calNetworkFee();
-    
+
     if (unspent < networkFee) {
       throw new Error(
         `Balance not enough. Need ${satoshisToAmount(
@@ -133,7 +137,7 @@ export async function createSendOrd({
   feeRate,
   outputValue,
   dump,
-  data
+  data,
 }: {
   utxos: UnspentOutput[];
   toAddress: string;
@@ -145,10 +149,10 @@ export async function createSendOrd({
   feeRate?: number;
   outputValue: number;
   dump?: boolean;
-  data?: string
+  data?: string;
 }) {
   const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
-  await tx.initBitcoin()
+  await tx.initBitcoin();
   tx.setChangeAddress(changeAddress);
 
   const nonOrdUtxos: UnspentOutput[] = [];
@@ -177,7 +181,7 @@ export async function createSendOrd({
     }
   }
 
-  if(data) tx.addOpRetunOutput(data)
+  if (data) tx.addOpRetunOutput(data);
 
   if (!found) {
     throw new Error("inscription not found.");
@@ -235,9 +239,11 @@ export async function createSendOrd({
     try {
     } catch (error) {
       if (error instanceof Error && this.developMode) {
-        console.log(error.message)
+        console.log(error.message);
       }
-      throw new Error('Invalid transaction data, it should be a hex string start with 0x')
+      throw new Error(
+        "Invalid transaction data, it should be a hex string start with 0x"
+      );
     }
   }
   const psbt = await tx.createSignedPsbt();
@@ -259,7 +265,7 @@ export async function createSendMultiOrds({
   pubkey,
   feeRate,
   dump,
-  data
+  data,
 }: {
   utxos: UnspentOutput[];
   toAddress: string;
@@ -274,10 +280,10 @@ export async function createSendMultiOrds({
   pubkey: string;
   feeRate?: number;
   dump?: boolean;
-  data?: string
+  data?: string;
 }) {
   const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
-  await tx.initBitcoin()
+  await tx.initBitcoin();
   tx.setChangeAddress(changeAddress);
 
   const nonOrdUtxos: UnspentOutput[] = [];
@@ -290,7 +296,7 @@ export async function createSendMultiOrds({
     }
   });
 
-  if(data) tx.addOpRetunOutput(data)
+  if (data) tx.addOpRetunOutput(data);
 
   // find NFT
   let foundedCount = 0;
@@ -308,7 +314,7 @@ export async function createSendMultiOrds({
       foundedCount++;
     }
   }
-  
+
   receivers.forEach((v) => {
     tx.addOutput(v.address, v.amount);
   });
@@ -383,7 +389,7 @@ export async function createSendMultiBTC({
   feeRate,
   pubkey,
   dump,
-  data
+  data,
 }: {
   utxos: UnspentOutput[];
   receivers: {
@@ -396,10 +402,10 @@ export async function createSendMultiBTC({
   feeRate?: number;
   pubkey: string;
   dump?: boolean;
-  data?: string
+  data?: string;
 }) {
   const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
-  await tx.initBitcoin()
+  await tx.initBitcoin();
   tx.setChangeAddress(changeAddress);
 
   const nonOrdUtxos: UnspentOutput[] = [];
@@ -436,7 +442,7 @@ export async function createSendMultiBTC({
     }
   }
 
-  if(data) tx.addOpRetunOutput(data)
+  if (data) tx.addOpRetunOutput(data);
 
   if (nonOrdUtxos.length === 0) {
     throw new Error("Balance not enough");
@@ -469,6 +475,114 @@ export async function createSendMultiBTC({
   }
 
   const psbt = await tx.createSignedPsbt();
+  if (dump) {
+    tx.dumpTx(psbt);
+  }
+
+  return psbt;
+}
+
+export async function inscribe({
+  address,
+  utxos,
+  inscription,
+  wallet,
+  network,
+  pubkey,
+  feeRate,
+  changeAddress,
+  dump,
+}: {
+  address: string;
+  utxos: UnspentOutput[];
+  inscription: { body: Buffer; contentType: string };
+  wallet: any;
+  network: any;
+  pubkey: string;
+  changeAddress: string;
+  feeRate: number;
+  dump: boolean;
+}) {
+  const ecc = await initWasm();
+  bitcoin.initEccLib(ecc);
+  const bip32 = BIP32Factory(ecc);
+  const internalKey = bip32.fromSeed(rng(64), network);
+  const internalPubkey = toXOnly(internalKey.publicKey);
+  const asm = `${internalPubkey.toString("hex")} OP_CHECKSIG OP_0 OP_IF ${Buffer.from("ord", 'utf8').toString("hex")} 01 ${Buffer.from(inscription.contentType, 'utf8').toString('hex')} OP_0 ${inscription.body.toString('hex')} OP_ENDIF`
+  const leafScript = bitcoin.script.fromASM(asm);
+  console.log(leafScript.toString('hex'));
+  
+  const scriptTree = {
+    output: leafScript,
+  };
+  const redeem = {
+    output: leafScript,
+    redeemVersion: 192,
+  };
+  const { output, witness, address: receiveAddress } = bitcoin.payments.p2tr({
+    internalPubkey,
+    scriptTree,
+    redeem,
+    network,
+  });
+  const txSize = 200 + inscription.body.length / 4;
+  const tapLeafScript = {
+    script: leafScript,
+    leafVersion: 192,
+    controlBlock: witness![witness!.length - 1],
+  };
+
+  const fundPsbt = await createSendBTC({
+    utxos,
+    toAddress: receiveAddress,
+    toAmount: UTXO_DUST + txSize * feeRate,
+    wallet,
+    pubkey,
+    network,
+    feeRate,
+    changeAddress,
+    dump: true,
+  });
+
+  const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
+  const txid = await wallet.pushPsbt(fundPsbt.toHex())
+  console.log("txid", txid);
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  
+  const psbt = new bitcoin.Psbt({ network });
+  
+  psbt.addInput({
+    hash: txid,
+    index: 0,
+    witnessUtxo: { value: UTXO_DUST + txSize * feeRate, script: output! },
+  });
+
+  psbt.updateInput(0, {
+    tapLeafScript: [
+      {
+        leafVersion: redeem.redeemVersion,
+        script: redeem.output,
+        controlBlock: witness![witness!.length - 1],
+      },
+    ],
+  });
+  psbt.addOutput({ value: UTXO_DUST, address });
+  await psbt.signInputAsync(0, internalKey);
+  const customFinalizer = (_inputIndex: number, input: any) => {
+    const scriptSolution = [
+        input.tapScriptSig[0].signature,
+    ];
+    const witness = scriptSolution
+        .concat(tapLeafScript.script)
+        .concat(tapLeafScript.controlBlock);
+
+    return {
+        finalScriptWitness: witnessStackToScriptWitness(witness)
+    }
+}
+  psbt.finalizeInput(0, customFinalizer);
+  console.log(psbt.txInputs);
+  
   if (dump) {
     tx.dumpTx(psbt);
   }

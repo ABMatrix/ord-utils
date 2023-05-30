@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { UnspentOutput } from "./OrdTransaction";
-import * as bitcoin from "bitcoinjs-lib";
+import * as bitcoin from "bitcoinjs-lib-mpc";
 export declare function createSendBTC({ utxos, toAddress, toAmount, wallet, network, changeAddress, receiverToPayFee, feeRate, pubkey, dump, data, }: {
     utxos: UnspentOutput[];
     toAddress: string;

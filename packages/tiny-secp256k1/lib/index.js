@@ -396,7 +396,6 @@ export const initWasm = async () => {
         verify,
         verifySchnorr,
         privateSub,
-        xOnlyPointAddTweak,
         xOnlyPointAddTweakCheck,
         xOnlyPointFromScalar,
     }

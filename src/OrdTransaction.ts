@@ -1,5 +1,5 @@
 import { OrdUnspendOutput, UTXO_DUST } from "./OrdUnspendOutput";
-import * as bitcoin from "bitcoinjs-lib";
+import * as bitcoin from "bitcoinjs-lib-mpc";
 
 import { initWasm } from "../packages/tiny-secp256k1";
 
@@ -249,7 +249,7 @@ export class OrdTransaction {
     });
     this.opReturnOutputs.forEach((v) => {psbt.addOutput(v)})
     const res = await this.wallet.signPsbt(psbt.toBuffer().toString("hex"));
-    return bitcoin.Psbt.fromHex(res);
+    return bitcoin.Psbt.fromHex(res, {network: this.network});
   }
 
   async generate(autoAdjust: boolean) {

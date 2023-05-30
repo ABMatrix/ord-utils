@@ -2,7 +2,7 @@ import { initWasm } from "../packages/tiny-secp256k1/lib";
 import { OrdTransaction, UnspentOutput, toXOnly } from "./OrdTransaction";
 import { UTXO_DUST } from "./OrdUnspendOutput";
 import { satoshisToAmount, witnessStackToScriptWitness } from "./utils";
-import * as bitcoin from "bitcoinjs-lib";
+import * as bitcoin from "bitcoinjs-lib-mpc";
 import BIP32Factory from "bip32";
 const rng = require("randombytes");
 

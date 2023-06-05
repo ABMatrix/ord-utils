@@ -6,6 +6,8 @@ import * as bitcoin from "bitcoinjs-lib-mpc";
 import BIP32Factory from "bip32";
 const rng = require("randombytes");
 
+export { initWasm } from '../packages/tiny-secp256k1/lib'
+
 export async function createSendBTC({
   utxos,
   toAddress,

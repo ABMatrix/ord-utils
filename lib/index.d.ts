@@ -1,8 +1,9 @@
 /// <reference types="node" />
-import { UnspentOutput } from "./OrdTransaction";
+import { InternalTransaction, UnspentOutput } from "./OrdTransaction";
 import * as bitcoin from "bitcoinjs-lib-mpc";
-export { initWasm } from '../packages/tiny-secp256k1/lib';
-export declare function createSendBTC({ utxos, toAddress, toAmount, wallet, network, changeAddress, receiverToPayFee, feeRate, pubkey, dump, data, }: {
+export * from './utils';
+export { initWasm } from "../packages/tiny-secp256k1/lib";
+export declare function createSendBTC({ utxos, toAddress, toAmount, wallet, network, changeAddress, receiverToPayFee, feeRate, pubkey, dump, data, txInfo, }: {
     utxos: UnspentOutput[];
     toAddress: string;
     toAmount: number;
@@ -14,8 +15,9 @@ export declare function createSendBTC({ utxos, toAddress, toAmount, wallet, netw
     pubkey: string;
     dump?: boolean;
     data?: string;
+    txInfo?: InternalTransaction;
 }): Promise<bitcoin.Psbt>;
-export declare function createSendOrd({ utxos, toAddress, toOrdId, wallet, network, changeAddress, pubkey, feeRate, outputValue, dump, data, }: {
+export declare function createSendOrd({ utxos, toAddress, toOrdId, wallet, network, changeAddress, pubkey, feeRate, outputValue, dump, data, txInfo, }: {
     utxos: UnspentOutput[];
     toAddress: string;
     toOrdId: string;
@@ -27,8 +29,9 @@ export declare function createSendOrd({ utxos, toAddress, toOrdId, wallet, netwo
     outputValue: number;
     dump?: boolean;
     data?: string;
+    txInfo?: InternalTransaction;
 }): Promise<bitcoin.Psbt>;
-export declare function createSendMultiOrds({ utxos, toAddress, toOrdIds, receivers, wallet, network, changeAddress, pubkey, feeRate, dump, data, }: {
+export declare function createSendMultiOrds({ utxos, toAddress, toOrdIds, receivers, wallet, network, changeAddress, pubkey, feeRate, dump, data, txInfo, }: {
     utxos: UnspentOutput[];
     toAddress: string;
     toOrdIds: string[];
@@ -43,8 +46,9 @@ export declare function createSendMultiOrds({ utxos, toAddress, toOrdIds, receiv
     feeRate?: number;
     dump?: boolean;
     data?: string;
+    txInfo?: InternalTransaction;
 }): Promise<bitcoin.Psbt>;
-export declare function createSendMultiBTC({ utxos, receivers, wallet, network, changeAddress, feeRate, pubkey, dump, data, }: {
+export declare function createSendMultiBTC({ utxos, receivers, wallet, network, changeAddress, feeRate, pubkey, dump, data, txInfo, }: {
     utxos: UnspentOutput[];
     receivers: {
         address: string;
@@ -57,8 +61,23 @@ export declare function createSendMultiBTC({ utxos, receivers, wallet, network, 
     pubkey: string;
     dump?: boolean;
     data?: string;
+    txInfo?: InternalTransaction;
 }): Promise<bitcoin.Psbt>;
 export declare function inscribe({ address, utxos, inscription, wallet, network, pubkey, feeRate, changeAddress, dump, }: {
+    address: string;
+    utxos: UnspentOutput[];
+    inscription: {
+        body: Buffer;
+        contentType: string;
+    };
+    wallet: any;
+    network: any;
+    pubkey: string;
+    changeAddress: string;
+    feeRate: number;
+    dump: boolean;
+}): Promise<bitcoin.Psbt>;
+export declare function inscribeWithOneStep({ address, utxos, inscription, wallet, network, pubkey, feeRate, }: {
     address: string;
     utxos: UnspentOutput[];
     inscription: {

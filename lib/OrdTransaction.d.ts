@@ -20,6 +20,12 @@ interface OpReturnOutput {
     script: Buffer;
     value: number;
 }
+export interface InternalTransaction {
+    form?: string;
+    type?: string;
+    to: string;
+    amount: string;
+}
 export interface UnspentOutput {
     txId: string;
     outputIndex: number;
@@ -45,7 +51,7 @@ export declare enum AddressType {
 export declare const toXOnly: (pubKey: Buffer) => Buffer;
 export declare function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput;
 export declare class OrdTransaction {
-    private inputs;
+    inputs: TxInput[];
     outputs: TxOutput[];
     opReturnOutputs: OpReturnOutput[];
     private changeOutputIndex;
@@ -71,7 +77,8 @@ export declare class OrdTransaction {
     getChangeAmount(): number;
     removeChangeOutput(): void;
     removeRecentOutputs(count: number): void;
-    createSignedPsbt(): Promise<bitcoin.Psbt>;
+    createSignedPsbt(txInfo?: InternalTransaction): Promise<bitcoin.Psbt>;
+    createPsbt(): Promise<bitcoin.Psbt>;
     generate(autoAdjust: boolean): Promise<{
         fee: number;
         rawtx: string;

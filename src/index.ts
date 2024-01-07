@@ -1,12 +1,20 @@
 import { initWasm } from "../packages/tiny-secp256k1/lib";
-import { OrdTransaction, UnspentOutput, toXOnly } from "./OrdTransaction";
+import {
+  AddressType,
+  InternalTransaction,
+  OrdTransaction,
+  UnspentOutput,
+  toXOnly,
+} from "./OrdTransaction";
 import { UTXO_DUST } from "./OrdUnspendOutput";
 import { satoshisToAmount, witnessStackToScriptWitness } from "./utils";
 import * as bitcoin from "bitcoinjs-lib-mpc";
 import BIP32Factory from "bip32";
+
+export * from './utils'
 const rng = require("randombytes");
 
-export { initWasm } from '../packages/tiny-secp256k1/lib'
+export { initWasm } from "../packages/tiny-secp256k1/lib";
 
 export async function createSendBTC({
   utxos,
@@ -20,6 +28,7 @@ export async function createSendBTC({
   pubkey,
   dump,
   data,
+  txInfo,
 }: {
   utxos: UnspentOutput[];
   toAddress: string;
@@ -32,6 +41,7 @@ export async function createSendBTC({
   pubkey: string;
   dump?: boolean;
   data?: string;
+  txInfo?: InternalTransaction;
 }) {
   const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
   await tx.initBitcoin();
@@ -120,7 +130,7 @@ export async function createSendBTC({
     }
   }
 
-  const psbt = await tx.createSignedPsbt();
+  const psbt = await tx.createSignedPsbt(txInfo);
   if (dump) {
     tx.dumpTx(psbt);
   }
@@ -140,6 +150,7 @@ export async function createSendOrd({
   outputValue,
   dump,
   data,
+  txInfo,
 }: {
   utxos: UnspentOutput[];
   toAddress: string;
@@ -152,6 +163,7 @@ export async function createSendOrd({
   outputValue: number;
   dump?: boolean;
   data?: string;
+  txInfo?: InternalTransaction;
 }) {
   const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
   await tx.initBitcoin();
@@ -248,7 +260,7 @@ export async function createSendOrd({
       );
     }
   }
-  const psbt = await tx.createSignedPsbt();
+  const psbt = await tx.createSignedPsbt(txInfo);
   if (dump) {
     tx.dumpTx(psbt);
   }
@@ -268,6 +280,7 @@ export async function createSendMultiOrds({
   feeRate,
   dump,
   data,
+  txInfo,
 }: {
   utxos: UnspentOutput[];
   toAddress: string;
@@ -283,6 +296,7 @@ export async function createSendMultiOrds({
   feeRate?: number;
   dump?: boolean;
   data?: string;
+  txInfo?: InternalTransaction;
 }) {
   const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
   await tx.initBitcoin();
@@ -374,7 +388,7 @@ export async function createSendMultiOrds({
     tx.removeChangeOutput();
   }
 
-  const psbt = await tx.createSignedPsbt();
+  const psbt = await tx.createSignedPsbt(txInfo);
   if (dump) {
     tx.dumpTx(psbt);
   }
@@ -392,6 +406,7 @@ export async function createSendMultiBTC({
   pubkey,
   dump,
   data,
+  txInfo,
 }: {
   utxos: UnspentOutput[];
   receivers: {
@@ -405,6 +420,7 @@ export async function createSendMultiBTC({
   pubkey: string;
   dump?: boolean;
   data?: string;
+  txInfo?: InternalTransaction;
 }) {
   const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
   await tx.initBitcoin();
@@ -476,7 +492,7 @@ export async function createSendMultiBTC({
     tx.removeChangeOutput();
   }
 
-  const psbt = await tx.createSignedPsbt();
+  const psbt = await tx.createSignedPsbt(txInfo);
   if (dump) {
     tx.dumpTx(psbt);
   }
@@ -510,10 +526,16 @@ export async function inscribe({
   const bip32 = BIP32Factory(ecc);
   const internalKey = bip32.fromSeed(rng(64), network);
   const internalPubkey = toXOnly(internalKey.publicKey);
-  const asm = `${internalPubkey.toString("hex")} OP_CHECKSIG OP_0 OP_IF ${Buffer.from("ord", 'utf8').toString("hex")} 01 ${Buffer.from(inscription.contentType, 'utf8').toString('hex')} OP_0 ${inscription.body.toString('hex')} OP_ENDIF`
+  const asm = `${internalPubkey.toString(
+    "hex"
+  )} OP_CHECKSIG OP_0 OP_IF ${Buffer.from("ord", "utf8").toString(
+    "hex"
+  )} 01 ${Buffer.from(inscription.contentType, "utf8").toString(
+    "hex"
+  )} OP_0 ${inscription.body.toString("hex")} OP_ENDIF`;
   const leafScript = bitcoin.script.fromASM(asm);
-  console.log(leafScript.toString('hex'));
-  
+  console.log(leafScript.toString("hex"));
+
   const scriptTree = {
     output: leafScript,
   };
@@ -521,7 +543,11 @@ export async function inscribe({
     output: leafScript,
     redeemVersion: 192,
   };
-  const { output, witness, address: receiveAddress } = bitcoin.payments.p2tr({
+  const {
+    output,
+    witness,
+    address: receiveAddress,
+  } = bitcoin.payments.p2tr({
     internalPubkey,
     scriptTree,
     redeem,
@@ -547,12 +573,11 @@ export async function inscribe({
   });
 
   const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
-  const txid = await wallet.pushPsbt(fundPsbt.toHex())
-  console.log("txid", txid);
+  const txid = await wallet.pushPsbt(fundPsbt.toHex());
   await new Promise((resolve) => setTimeout(resolve, 1000));
-  
+
   const psbt = new bitcoin.Psbt({ network });
-  
+
   psbt.addInput({
     hash: txid,
     index: 0,
@@ -571,23 +596,103 @@ export async function inscribe({
   psbt.addOutput({ value: UTXO_DUST, address });
   await psbt.signInputAsync(0, internalKey);
   const customFinalizer = (_inputIndex: number, input: any) => {
-    const scriptSolution = [
-        input.tapScriptSig[0].signature,
-    ];
+    const scriptSolution = [input.tapScriptSig[0].signature];
     const witness = scriptSolution
-        .concat(tapLeafScript.script)
-        .concat(tapLeafScript.controlBlock);
+      .concat(tapLeafScript.script)
+      .concat(tapLeafScript.controlBlock);
 
     return {
-        finalScriptWitness: witnessStackToScriptWitness(witness)
-    }
-}
+      finalScriptWitness: witnessStackToScriptWitness(witness),
+    };
+  };
   psbt.finalizeInput(0, customFinalizer);
   console.log(psbt.txInputs);
-  
+
   if (dump) {
     tx.dumpTx(psbt);
   }
 
+  return psbt;
+}
+
+export async function inscribeWithOneStep({
+  address,
+  utxos,
+  inscription,
+  wallet,
+  network,
+  pubkey,
+  feeRate,
+}: {
+  address: string;
+  utxos: UnspentOutput[];
+  inscription: { body: Buffer; contentType: string };
+  wallet: any;
+  network: any;
+  pubkey: string;
+  changeAddress: string;
+  feeRate: number;
+  dump: boolean;
+}) {
+  const ecc = await initWasm();
+  bitcoin.initEccLib(ecc);
+  const internalPubkey = toXOnly(Buffer.from(pubkey, "hex"));
+  const asm = `${internalPubkey.toString(
+    "hex"
+  )} OP_CHECKSIG OP_0 OP_IF ${Buffer.from("ord", "utf8").toString(
+    "hex"
+  )} 01 ${Buffer.from(inscription.contentType, "utf8").toString(
+    "hex"
+  )} OP_0 ${inscription.body.toString("hex")} OP_ENDIF`;
+  const leafScript = bitcoin.script.fromASM(asm);
+  console.log(leafScript.toString("hex"));
+
+  const scriptTree = {
+    output: leafScript,
+  };
+  const redeem = {
+    output: leafScript,
+    redeemVersion: 192,
+  };
+  const { witness, output } = bitcoin.payments.p2tr({
+    pubkey: internalPubkey,
+    scriptTree,
+    redeem,
+    network,
+  });
+
+  let psbt = new bitcoin.Psbt({ network });
+  const txSize = 200 + inscription.body.length / 4;
+
+  psbt.addInput({
+    hash: utxos[0].txId,
+    index: utxos[0].outputIndex,
+    witnessUtxo: { value: UTXO_DUST + txSize * feeRate, script: output! },
+
+  });
+  psbt.updateInput(0, {
+    tapLeafScript: [
+      {
+        leafVersion: redeem.redeemVersion,
+        script: redeem.output,
+        controlBlock: witness![witness!.length - 1],
+      },
+    ],
+  });
+  psbt.addOutput({ value: UTXO_DUST, address });
+
+  await psbt.signAllInputsAsync(wallet.signer, {to: address, value: UTXO_DUST.toString()});
+  // const customFinalizer = (_inputIndex: number, input: any) => {
+  //   console.log({input});
+  //   const scriptSolution = [input.tapScriptSig[0].signature];
+  //   const witness = scriptSolution
+  //     .concat(tapLeafScript.script)
+  //     .concat(tapLeafScript.controlBlock);
+
+  //   return {
+  //     finalScriptWitness: witnessStackToScriptWitness(witness),
+  //   };
+  // };
+  psbt.finalizeAllInputs();
   return psbt;
 }

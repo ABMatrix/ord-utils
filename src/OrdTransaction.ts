@@ -26,6 +26,12 @@ interface OpReturnOutput {
   value: number;
 }
 
+export interface InternalTransaction {
+  form?: string;
+  type?: string;
+  to: string;
+  amount: string
+}
 export interface UnspentOutput {
   txId: string;
   outputIndex: number;
@@ -118,7 +124,7 @@ export function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput {
 }
 
 export class OrdTransaction {
-  private inputs: TxInput[] = [];
+  public inputs: TxInput[] = [];
   public outputs: TxOutput[] = [];
   public opReturnOutputs: OpReturnOutput[] = [];
   private changeOutputIndex = -1;
@@ -173,7 +179,7 @@ export class OrdTransaction {
   }
 
   async calNetworkFee() {
-    // const psbt = await this.createSignedPsbt();
+    // const psbt = await this.createPsbt();
     // let txSize = psbt.extractTransaction(true).toBuffer().length;
     // psbt.data.inputs.forEach((v) => {
     //   if (v.finalScriptWitness) {
@@ -200,7 +206,6 @@ export class OrdTransaction {
         script: embed.output!,
         value: UTXO_DUST,
       })
-
   }
 
   getOutput(index: number) {
@@ -233,7 +238,7 @@ export class OrdTransaction {
     this.outputs.splice(-count);
   }
 
-  async createSignedPsbt() {
+  async createSignedPsbt(txInfo?: InternalTransaction) {
     const psbt = new bitcoin.Psbt({ network: this.network });
     this.inputs.forEach((v, index) => {
       if (v.utxo.addressType === AddressType.P2PKH) {
@@ -248,8 +253,27 @@ export class OrdTransaction {
       psbt.addOutput(v);
     });
     this.opReturnOutputs.forEach((v) => {psbt.addOutput(v)})
-    const res = await this.wallet.signPsbt(psbt.toBuffer().toString("hex"));
+    console.log(psbt.toBuffer().toString('hex'));
+    const res = await this.wallet.signPsbt(psbt.toBuffer().toString("hex"), txInfo);
     return bitcoin.Psbt.fromHex(res, {network: this.network});
+  }
+  
+  async createPsbt() {
+    const psbt = new bitcoin.Psbt({ network: this.network });
+    this.inputs.forEach((v, index) => {
+      if (v.utxo.addressType === AddressType.P2PKH) {
+        //@ts-ignore
+        psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = true;
+      }
+      psbt.addInput(v.data);
+      psbt.setInputSequence(index, 0xfffffffd); // support RBF
+    });
+
+    this.outputs.forEach((v) => {
+      psbt.addOutput(v);
+    });
+    this.opReturnOutputs.forEach((v) => {psbt.addOutput(v)})
+    return psbt
   }
 
   async generate(autoAdjust: boolean) {

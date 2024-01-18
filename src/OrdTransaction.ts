@@ -1,10 +1,9 @@
-import { OrdUnspendOutput, UTXO_DUST } from "./OrdUnspendOutput";
+import { UTXO_DUST } from "./OrdUnspendOutput";
 import * as bitcoin from "bitcoinjs-lib-mpc";
 
 import { initWasm } from "../packages/tiny-secp256k1";
 
-const INPUT_RATE = 68
-const OUTPUT_RATE = 31
+const OUTPUT_RATE = 40
 
 interface TxInput {
   data: {
@@ -53,6 +52,23 @@ export enum AddressType {
   P2SH_P2WPKH,
   M44_P2WPKH,
   M44_P2TR,
+}
+
+function getAddressInputSize(type: AddressType) {
+  switch (type) {
+    case AddressType.P2WPKH:
+      return 68 
+    case AddressType.P2TR:
+      return 68
+    case AddressType.P2SH_P2WPKH:
+      return 91
+    case AddressType.M44_P2WPKH:
+      return 68
+    case AddressType.M44_P2TR:
+      return 68
+    case AddressType.P2PKH:
+      return 148
+  }
 }
 
 export const toXOnly = (pubKey: Buffer) =>
@@ -125,8 +141,7 @@ export function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput {
 
 export class OrdTransaction {
   public inputs: TxInput[] = [];
-  public outputs: TxOutput[] = [];
-  public opReturnOutputs: OpReturnOutput[] = [];
+  public outputs: (TxOutput | OpReturnOutput)[] = [];
   private changeOutputIndex = -1;
   private wallet: any;
   public changedAddress: string;
@@ -180,14 +195,15 @@ export class OrdTransaction {
 
   async calNetworkFee() {
     // const psbt = await this.createPsbt();
-    // let txSize = psbt.extractTransaction(true).toBuffer().length;
     // psbt.data.inputs.forEach((v) => {
     //   if (v.finalScriptWitness) {
     //     txSize -= v.finalScriptWitness.length * 0.75;
     //   }
     // });
     // const fee = Math.ceil(txSize * this.feeRate);
-    const fee = Math.ceil(((INPUT_RATE * this.inputs.length) + OUTPUT_RATE * this.outputs.length + 10.5) * this.feeRate)
+    const type = this.inputs[0].utxo.addressType
+    const inputValue = getAddressInputSize(type)
+    const fee = Math.ceil(((inputValue * this.inputs.length) + OUTPUT_RATE * this.outputs.length + 10.5) * this.feeRate)
     return fee;
   }
 
@@ -198,13 +214,13 @@ export class OrdTransaction {
     });
   }
 
-  addOpRetunOutput(data: string) {
+  addOpReturnOutput(data: string) {
       const hexString = data.startsWith('0x') ? data.slice(2) : data
       const embedData = Buffer.from(hexString, 'hex')
       const embed = bitcoin.payments.embed({ data: [embedData] })
-      this.opReturnOutputs.push({
+      this.outputs.push({
         script: embed.output!,
-        value: UTXO_DUST,
+        value: 0,
       })
   }
 
@@ -252,8 +268,6 @@ export class OrdTransaction {
     this.outputs.forEach((v) => {
       psbt.addOutput(v);
     });
-    this.opReturnOutputs.forEach((v) => {psbt.addOutput(v)})
-    console.log(psbt.toBuffer().toString('hex'));
     const res = await this.wallet.signPsbt(psbt.toBuffer().toString("hex"), txInfo);
     return bitcoin.Psbt.fromHex(res, {network: this.network});
   }
@@ -262,7 +276,7 @@ export class OrdTransaction {
     const psbt = new bitcoin.Psbt({ network: this.network });
     this.inputs.forEach((v, index) => {
       if (v.utxo.addressType === AddressType.P2PKH) {
-        //@ts-ignore
+        // @ts-ignore
         psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = true;
       }
       psbt.addInput(v.data);
@@ -272,7 +286,6 @@ export class OrdTransaction {
     this.outputs.forEach((v) => {
       psbt.addOutput(v);
     });
-    this.opReturnOutputs.forEach((v) => {psbt.addOutput(v)})
     return psbt
   }
 
@@ -343,7 +356,7 @@ Outputs
 ${this.outputs
   .map((output, index) => {
     const str = `
-=>${index} ${output.address} ${output.value} Sats`;
+=>${index} ${output} ${output.value} Sats`;
     return str;
   })
   .join("")}

@@ -52,8 +52,7 @@ export declare const toXOnly: (pubKey: Buffer) => Buffer;
 export declare function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput;
 export declare class OrdTransaction {
     inputs: TxInput[];
-    outputs: TxOutput[];
-    opReturnOutputs: OpReturnOutput[];
+    outputs: (TxOutput | OpReturnOutput)[];
     private changeOutputIndex;
     private wallet;
     changedAddress: string;
@@ -70,10 +69,10 @@ export declare class OrdTransaction {
     isEnoughFee(): Promise<boolean>;
     calNetworkFee(): Promise<number>;
     addOutput(address: string, value: number): void;
-    addOpRetunOutput(data: string): void;
-    getOutput(index: number): TxOutput;
+    addOpReturnOutput(data: string): void;
+    getOutput(index: number): TxOutput | OpReturnOutput;
     addChangeOutput(value: number): void;
-    getChangeOutput(): TxOutput;
+    getChangeOutput(): TxOutput | OpReturnOutput;
     getChangeAmount(): number;
     removeChangeOutput(): void;
     removeRecentOutputs(count: number): void;

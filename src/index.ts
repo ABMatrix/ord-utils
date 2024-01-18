@@ -79,7 +79,7 @@ export async function createSendBTC({
     }
   }
 
-  if (data) tx.addOpRetunOutput(data);
+  if (data) tx.addOpReturnOutput(data);
 
   if (nonOrdUtxos.length === 0) {
     throw new Error("Balance not enough");
@@ -92,6 +92,7 @@ export async function createSendBTC({
     }
 
     const networkFee = await tx.calNetworkFee();
+    // @ts-ignore
     const output = tx.outputs.find((v) => v.address === toAddress);
     if (output.value < networkFee) {
       throw new Error(
@@ -195,7 +196,7 @@ export async function createSendOrd({
     }
   }
 
-  if (data) tx.addOpRetunOutput(data);
+  if (data) tx.addOpReturnOutput(data);
 
   if (!found) {
     throw new Error("inscription not found.");
@@ -312,7 +313,7 @@ export async function createSendMultiOrds({
     }
   });
 
-  if (data) tx.addOpRetunOutput(data);
+  if (data) tx.addOpReturnOutput(data);
 
   // find NFT
   let foundedCount = 0;
@@ -440,6 +441,8 @@ export async function createSendMultiBTC({
     tx.addOutput(v.address, v.amount);
   });
 
+  if (data) tx.addOpReturnOutput(data);
+
   const outputAmount = tx.getTotalOutput();
 
   let tmpSum = tx.getTotalInput();
@@ -460,7 +463,6 @@ export async function createSendMultiBTC({
     }
   }
 
-  if (data) tx.addOpRetunOutput(data);
 
   if (nonOrdUtxos.length === 0) {
     throw new Error("Balance not enough");

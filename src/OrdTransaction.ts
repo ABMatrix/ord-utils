@@ -67,7 +67,7 @@ function getAddressInputSize(type: AddressType) {
     case AddressType.M44_P2TR:
       return 68
     case AddressType.P2PKH:
-      return 148
+      return 146.5
   }
 }
 
@@ -89,7 +89,8 @@ function getAddressOutputSize(output) {
   if(address.startsWith('2') || address.startsWith('3')) {
     return 32
   }
-  return 32
+  // P2PKH
+  return 34
 }
 
 export const toXOnly = (pubKey: Buffer) =>

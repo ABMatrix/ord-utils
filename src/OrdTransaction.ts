@@ -3,7 +3,7 @@ import * as bitcoin from "bitcoinjs-lib-mpc";
 
 import { initWasm } from "../packages/tiny-secp256k1";
 
-const OUTPUT_RATE = 40
+const OUTPUT_RATE = 43
 
 interface TxInput {
   data: {
@@ -57,9 +57,9 @@ export enum AddressType {
 function getAddressInputSize(type: AddressType) {
   switch (type) {
     case AddressType.P2WPKH:
-      return 68 
-    case AddressType.P2TR:
       return 68
+    case AddressType.P2TR:
+      return 57.5
     case AddressType.P2SH_P2WPKH:
       return 91
     case AddressType.M44_P2WPKH:
@@ -69,6 +69,27 @@ function getAddressInputSize(type: AddressType) {
     case AddressType.P2PKH:
       return 148
   }
+}
+
+function getAddressOutputSize(output) {
+  // OP_RETURN
+  if( output.script) {
+    return 8 + 1 + output.script.length
+  }
+  const address = output.address
+  // P2TR address
+  if(address.startsWith('bc1p') || address.startsWith('tb1p')) {
+    return 43;
+  }
+  // P2WPKH address
+  if(address.startsWith('bc1q') || address.startsWith('tb1q')) {
+    return 31
+  }
+  // P2SH address
+  if(address.startsWith('2') || address.startsWith('3')) {
+    return 32
+  }
+  return 32
 }
 
 export const toXOnly = (pubKey: Buffer) =>
@@ -203,7 +224,9 @@ export class OrdTransaction {
     // const fee = Math.ceil(txSize * this.feeRate);
     const type = this.inputs[0].utxo.addressType
     const inputValue = getAddressInputSize(type)
-    const fee = Math.ceil(((inputValue * this.inputs.length) + OUTPUT_RATE * this.outputs.length + 10.5) * this.feeRate)
+    // @ts-ignore
+    const outputSize = this.outputs.reduce((pre, cur) => pre + getAddressOutputSize(cur), 0)
+    const fee = Math.ceil(((inputValue * this.inputs.length) + outputSize + 10.5) * this.feeRate)
     return fee;
   }
 

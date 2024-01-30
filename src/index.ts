@@ -536,7 +536,6 @@ export async function inscribe({
     "hex"
   )} OP_0 ${inscription.body.toString("hex")} OP_ENDIF`;
   const leafScript = bitcoin.script.fromASM(asm);
-  console.log(leafScript.toString("hex"));
 
   const scriptTree = {
     output: leafScript,
@@ -608,8 +607,6 @@ export async function inscribe({
     };
   };
   psbt.finalizeInput(0, customFinalizer);
-  console.log(psbt.txInputs);
-
   if (dump) {
     tx.dumpTx(psbt);
   }
@@ -647,7 +644,6 @@ export async function inscribeWithOneStep({
     "hex"
   )} OP_0 ${inscription.body.toString("hex")} OP_ENDIF`;
   const leafScript = bitcoin.script.fromASM(asm);
-  console.log(leafScript.toString("hex"));
 
   const scriptTree = {
     output: leafScript,

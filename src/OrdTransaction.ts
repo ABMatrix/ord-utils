@@ -2,9 +2,6 @@ import { UTXO_DUST } from "./OrdUnspendOutput";
 import * as bitcoin from "bitcoinjs-lib-mpc";
 
 import { initWasm } from "../packages/tiny-secp256k1";
-
-const OUTPUT_RATE = 43
-
 interface TxInput {
   data: {
     hash: string;
@@ -29,7 +26,7 @@ export interface InternalTransaction {
   form?: string;
   type?: string;
   to: string;
-  amount: string
+  amount: string;
 }
 export interface UnspentOutput {
   txId: string;
@@ -43,7 +40,7 @@ export interface UnspentOutput {
     offset: number;
   }[];
   tapMerkelRoot?: string;
-  tapLeafScript?: any
+  tapLeafScript?: any;
 }
 export enum AddressType {
   P2PKH,
@@ -57,40 +54,40 @@ export enum AddressType {
 function getAddressInputSize(type: AddressType) {
   switch (type) {
     case AddressType.P2WPKH:
-      return 68
+      return 68;
     case AddressType.P2TR:
-      return 57.5
+      return 57.5;
     case AddressType.P2SH_P2WPKH:
-      return 91
+      return 91;
     case AddressType.M44_P2WPKH:
-      return 68
+      return 68;
     case AddressType.M44_P2TR:
-      return 68
+      return 57.5;
     case AddressType.P2PKH:
-      return 146.5
+      return 148;
   }
 }
 
 function getAddressOutputSize(output) {
   // OP_RETURN
-  if( output.script) {
-    return 8 + 1 + output.script.length
+  if (output.script) {
+    return 8 + 1 + output.script.length;
   }
-  const address = output.address
+  const address = output.address;
   // P2TR address
-  if(address.startsWith('bc1p') || address.startsWith('tb1p')) {
+  if (address.startsWith("bc1p") || address.startsWith("tb1p")) {
     return 43;
   }
   // P2WPKH address
-  if(address.startsWith('bc1q') || address.startsWith('tb1q')) {
-    return 31
+  if (address.startsWith("bc1q") || address.startsWith("tb1q")) {
+    return 31;
   }
   // P2SH address
-  if(address.startsWith('2') || address.startsWith('3')) {
-    return 32
+  if (address.startsWith("2") || address.startsWith("3")) {
+    return 32;
   }
   // P2PKH
-  return 34
+  return 34;
 }
 
 export const toXOnly = (pubKey: Buffer) =>
@@ -170,7 +167,7 @@ export class OrdTransaction {
   private network: bitcoin.Network = bitcoin.networks.bitcoin;
   private feeRate: number;
   private pubkey: string;
-  
+
   constructor(wallet: any, network: any, pubkey: string, feeRate?: number) {
     this.wallet = wallet;
     this.network = network;
@@ -179,7 +176,7 @@ export class OrdTransaction {
   }
 
   async initBitcoin() {
-    const ecc = await initWasm()
+    const ecc = await initWasm();
     bitcoin.initEccLib(ecc);
   }
 
@@ -223,11 +220,16 @@ export class OrdTransaction {
     //   }
     // });
     // const fee = Math.ceil(txSize * this.feeRate);
-    const type = this.inputs[0].utxo.addressType
-    const inputValue = getAddressInputSize(type)
+    const type = this.inputs[0].utxo.addressType;
+    const inputValue = getAddressInputSize(type);
     // @ts-ignore
-    const outputSize = this.outputs.reduce((pre, cur) => pre + getAddressOutputSize(cur), 0)
-    const fee = Math.ceil(((inputValue * this.inputs.length) + outputSize + 10.5) * this.feeRate)
+    const outputSize = this.outputs.reduce(
+      (pre, cur) => pre + getAddressOutputSize(cur),
+      0
+    );
+    const fee = Math.ceil(
+      (inputValue * this.inputs.length + outputSize + 10.5) * this.feeRate
+    );
     return fee;
   }
 
@@ -239,13 +241,13 @@ export class OrdTransaction {
   }
 
   addOpReturnOutput(data: string) {
-      const hexString = data.startsWith('0x') ? data.slice(2) : data
-      const embedData = Buffer.from(hexString, 'hex')
-      const embed = bitcoin.payments.embed({ data: [embedData] })
-      this.outputs.push({
-        script: embed.output!,
-        value: 0,
-      })
+    const hexString = data.startsWith("0x") ? data.slice(2) : data;
+    const embedData = Buffer.from(hexString, "hex");
+    const embed = bitcoin.payments.embed({ data: [embedData] });
+    this.outputs.push({
+      script: embed.output!,
+      value: 0,
+    });
   }
 
   getOutput(index: number) {
@@ -280,22 +282,46 @@ export class OrdTransaction {
 
   async createSignedPsbt(txInfo?: InternalTransaction) {
     const psbt = new bitcoin.Psbt({ network: this.network });
-    this.inputs.forEach((v, index) => {
+    for(let i = 0; i < this.inputs.length; i++) {
+      let v = this.inputs[i];
       if (v.utxo.addressType === AddressType.P2PKH) {
-        //@ts-ignore
-        psbt.__CACHE.__UNSAFE_SIGN_NONSEGWIT = true;
+        const txApiUrl =
+          `https://mempool.space${
+            this.network.bech32 === bitcoin.networks.bitcoin.bech32
+              ? ""
+              : this.network.bech32 === bitcoin.networks.testnet.bech32
+              ? "/testnet"
+              : "/signet"
+          }/api/tx/` +
+          v.utxo.txId +
+          "/hex";
+        const response = await fetch(txApiUrl, {
+          method: "GET",
+          mode: "cors",
+          headers: {"CONTENT-TYPE": "text/plain"},
+          cache: "default",
+        });
+        if (response.status !== 200) {
+          throw new Error("Fetch raw tx failed");
+        }
+        const rawTx = await response.text();
+        // @ts-ignore
+        v.data.nonWitnessUtxo = Buffer.from(rawTx, "hex");
       }
       psbt.addInput(v.data);
-      psbt.setInputSequence(index, 0xfffffffd); // support RBF
-    });
+      psbt.setInputSequence(i, 0xfffffffd); // support RBF
+    };
 
     this.outputs.forEach((v) => {
       psbt.addOutput(v);
     });
-    const res = await this.wallet.signPsbt(psbt.toBuffer().toString("hex"), txInfo);
-    return bitcoin.Psbt.fromHex(res, {network: this.network});
+    const res = await this.wallet.signPsbt(
+      psbt.toBuffer().toString("hex"),
+      txInfo
+    );
+    return bitcoin.Psbt.fromHex(res, { network: this.network });
   }
-  
+
   async createPsbt() {
     const psbt = new bitcoin.Psbt({ network: this.network });
     this.inputs.forEach((v, index) => {
@@ -310,7 +336,7 @@ export class OrdTransaction {
     this.outputs.forEach((v) => {
       psbt.addOutput(v);
     });
-    return psbt
+    return psbt;
   }
 
   async generate(autoAdjust: boolean) {

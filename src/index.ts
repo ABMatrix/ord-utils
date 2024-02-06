@@ -313,8 +313,6 @@ export async function createSendMultiOrds({
     }
   });
 
-  if (data) tx.addOpReturnOutput(data);
-
   // find NFT
   let foundedCount = 0;
 
@@ -335,6 +333,8 @@ export async function createSendMultiOrds({
   receivers.forEach((v) => {
     tx.addOutput(v.address, v.amount);
   });
+
+  if (data) tx.addOpReturnOutput(data);
 
   if (foundedCount != toOrdIds.length) {
     throw new Error("inscription not found.");
@@ -370,7 +370,6 @@ export async function createSendMultiOrds({
 
   // add dummy output
   tx.addChangeOutput(1);
-
   const networkFee = await tx.calNetworkFee();
   if (unspent < networkFee) {
     throw new Error(

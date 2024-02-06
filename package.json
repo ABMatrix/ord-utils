@@ -1,6 +1,6 @@
 {
   "name": "@safematrix/ord-utils",
-  "version": "0.2.97",
+  "version": "0.2.98",
   "description": "Ordinals Utils",
   "keywords": [
     "bitcoin",
@@ -14,7 +14,7 @@
     "type": "git",
     "url": "https://github.com/unisat-wallet/ord-utils.git"
   },
-  "author": "Kervin",
+  "author": "Stone",
   "license": "ISC",
   "main": "lib/index.js",
   "module": "es/index.js",

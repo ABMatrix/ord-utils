@@ -190,7 +190,7 @@ export async function createSendOrd({
         throw new Error("Multiple inscriptions! Please split them first.");
       }
       tx.addInput(ordUtxo);
-      tx.addOutput(toAddress, ordUtxo.satoshis);
+      tx.addOutput(toAddress, Math.min(ordUtxo.satoshis, UTXO_DUST));
       found = true;
       break;
     }
@@ -325,7 +325,7 @@ export async function createSendMultiOrds({
         );
       }
       tx.addInput(ordUtxo);
-      tx.addOutput(toAddress, ordUtxo.satoshis);
+      tx.addOutput(toAddress, Math.min(ordUtxo.satoshis, UTXO_DUST));
       foundedCount++;
     }
   }

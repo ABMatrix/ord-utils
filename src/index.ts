@@ -501,6 +501,114 @@ export async function createSendMultiBTC({
   return psbt;
 }
 
+export async function createSendRunes({
+  utxos,
+  receivers,
+  wallet,
+  network,
+  changeAddress,
+  feeRate,
+  pubkey,
+  dump,
+  data,
+  runestone,
+  txInfo,
+}: {
+  utxos: UnspentOutput[];
+  receivers: {
+    address: string;
+    amount: number;
+  }[];
+  wallet: any;
+  network: any;
+  changeAddress: string;
+  feeRate?: number;
+  pubkey: string;
+  dump?: boolean;
+  data?: string;
+  runestone?: string;
+  txInfo?: InternalTransaction;
+}) {
+  const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
+  await tx.initBitcoin();
+  tx.setChangeAddress(changeAddress);
+
+  const nonRunesUtxos: UnspentOutput[] = [];
+  const runesUtxos: UnspentOutput[] = [];
+  utxos.forEach((v) => {
+    if (v.runes.length > 0) {
+      runesUtxos.push(v);
+    } else {
+      nonRunesUtxos.push(v);
+    }
+  });
+
+  receivers.forEach((v) => {
+    tx.addOutput(v.address, v.amount);
+  });
+
+  if (data) tx.addOpReturnOutput(data);
+  if (runestone) tx.addOpReturnOutput(runestone);
+
+  const outputAmount = tx.getTotalOutput();
+
+  let tmpSum = tx.getTotalInput();
+  for (let i = 0; i < nonRunesUtxos.length; i++) {
+    const nonRunesUtxo = nonRunesUtxos[i];
+    if (tmpSum < outputAmount) {
+      tx.addInput(nonRunesUtxo);
+      tmpSum += nonRunesUtxo.satoshis;
+      continue;
+    }
+
+    const fee = await tx.calNetworkFee();
+    if (tmpSum < outputAmount + fee) {
+      tx.addInput(nonRunesUtxo);
+      tmpSum += nonRunesUtxo.satoshis;
+    } else {
+      break;
+    }
+  }
+
+
+  if (nonRunesUtxos.length === 0) {
+    throw new Error("Balance not enough");
+  }
+
+  const unspent = tx.getUnspent();
+  if (unspent === 0) {
+    throw new Error("Balance not enough to pay network fee.");
+  }
+
+  // add dummy output
+  tx.addChangeOutput(1);
+
+  const networkFee = await tx.calNetworkFee();
+  if (unspent < networkFee) {
+    throw new Error(
+      `Balance not enough. Need ${satoshisToAmount(
+        networkFee
+      )} BTC as network fee, but only ${satoshisToAmount(unspent)} BTC.`
+    );
+  }
+
+  const leftAmount = unspent - networkFee;
+  if (leftAmount >= UTXO_DUST) {
+    // change dummy output to true output
+    tx.getChangeOutput().value = leftAmount;
+  } else {
+    // remove dummy output
+    tx.removeChangeOutput();
+  }
+
+  const psbt = await tx.createSignedPsbt(txInfo);
+  if (dump) {
+    tx.dumpTx(psbt);
+  }
+
+  return psbt;
+}
+
 export async function inscribe({
   address,
   utxos,

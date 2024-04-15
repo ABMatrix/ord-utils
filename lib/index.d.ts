@@ -63,6 +63,22 @@ export declare function createSendMultiBTC({ utxos, receivers, wallet, network, 
     data?: string;
     txInfo?: InternalTransaction;
 }): Promise<bitcoin.Psbt>;
+export declare function createSendRunes({ utxos, receivers, wallet, network, changeAddress, feeRate, pubkey, dump, data, runestone, txInfo, }: {
+    utxos: UnspentOutput[];
+    receivers: {
+        address: string;
+        amount: number;
+    }[];
+    wallet: any;
+    network: any;
+    changeAddress: string;
+    feeRate?: number;
+    pubkey: string;
+    dump?: boolean;
+    data?: string;
+    runestone?: string;
+    txInfo?: InternalTransaction;
+}): Promise<bitcoin.Psbt>;
 export declare function inscribe({ address, utxos, inscription, wallet, network, pubkey, feeRate, changeAddress, dump, }: {
     address: string;
     utxos: UnspentOutput[];

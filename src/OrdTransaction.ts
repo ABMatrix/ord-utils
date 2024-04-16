@@ -253,6 +253,13 @@ export class OrdTransaction {
       value: 0,
     });
   }
+  addRunestone(data: string) {
+    const hexString = data.startsWith("0x") ? data.slice(2) : data;
+    this.outputs.push({
+      script: Buffer.from(hexString, 'hex'),
+      value: 0,
+    });
+  }
 
   getOutput(index: number) {
     return this.outputs[index];

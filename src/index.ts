@@ -551,7 +551,7 @@ export async function createSendRunes({
   });
 
   if (data) tx.addOpReturnOutput(data);
-  if (runestone) tx.addOpReturnOutput(runestone);
+  if (runestone) tx.addRunestone(runestone);
 
   const outputAmount = tx.getTotalOutput();
 

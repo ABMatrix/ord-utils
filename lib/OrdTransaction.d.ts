@@ -74,6 +74,7 @@ export declare class OrdTransaction {
     calNetworkFee(): Promise<number>;
     addOutput(address: string, value: number): void;
     addOpReturnOutput(data: string): void;
+    addRunestone(data: string): void;
     getOutput(index: number): TxOutput | OpReturnOutput;
     addChangeOutput(value: number): void;
     getChangeOutput(): TxOutput | OpReturnOutput;

@@ -39,7 +39,7 @@ export interface UnspentOutput {
     id: string;
     offset: number;
   }[];
-  runes: {
+  runes?: {
     id: string;
     offset: number;
   }[],

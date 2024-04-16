@@ -45,7 +45,7 @@ export declare function createSendMultiOrds({ utxos, toAddress, toOrdIds, receiv
     pubkey: string;
     feeRate?: number;
     dump?: boolean;
-    data?: string;
+    data?: string | string[];
     txInfo?: InternalTransaction;
 }): Promise<bitcoin.Psbt>;
 export declare function createSendMultiBTC({ utxos, receivers, wallet, network, changeAddress, feeRate, pubkey, dump, data, txInfo, }: {

@@ -296,7 +296,7 @@ export async function createSendMultiOrds({
   pubkey: string;
   feeRate?: number;
   dump?: boolean;
-  data?: string;
+  data?: string | string[];
   txInfo?: InternalTransaction;
 }) {
   const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
@@ -334,7 +334,10 @@ export async function createSendMultiOrds({
     tx.addOutput(v.address, v.amount);
   });
 
-  if (data) tx.addOpReturnOutput(data);
+  if (Array.isArray(data)) { data.forEach(a =>  tx.addOpReturnOutput(a)); }
+  else {
+    if (data) tx.addOpReturnOutput(data);
+  }
 
   if (foundedCount != toOrdIds.length) {
     throw new Error("inscription not found.");
@@ -536,7 +539,7 @@ export async function createSendRunes({
   const nonRunesUtxos: UnspentOutput[] = [];
   const runesUtxos: UnspentOutput[] = [];
   utxos.forEach((v) => {
-    if (v.runes.length > 0) {
+    if (v.runes && v.runes.length > 0) {
       runesUtxos.push(v);
     } else {
       nonRunesUtxos.push(v);

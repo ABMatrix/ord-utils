@@ -545,6 +545,15 @@ export async function createSendRunes({
       nonRunesUtxos.push(v);
     }
   });
+  for (let i = 0; i < runesUtxos.length; i++) {
+    const runeUtxo = runesUtxos[i];
+    // if (runeUtxo.runes.length > 1) {
+    //     throw new Error(
+    //       "Multiple inscriptions in one UTXO! Please split them first."
+    //     );
+    //   }
+    tx.addInput(runeUtxo);
+  }
 
   receivers.forEach((v) => {
     tx.addOutput(v.address, v.amount);

@@ -38,8 +38,9 @@ export interface UnspentOutput {
         offset: number;
     }[];
     runes?: {
-        id: string;
-        offset: number;
+        runeid: string;
+        amount: string;
+        rune: string;
     }[];
     tapMerkelRoot?: string;
     tapLeafScript?: any;

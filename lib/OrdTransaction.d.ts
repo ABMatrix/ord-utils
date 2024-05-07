@@ -33,6 +33,7 @@ export interface UnspentOutput {
     scriptPk: string;
     addressType: AddressType;
     address: string;
+    pubkey: string;
     ords: {
         id: string;
         offset: number;
@@ -54,7 +55,7 @@ export declare enum AddressType {
     M44_P2TR = 5
 }
 export declare const toXOnly: (pubKey: Buffer) => Buffer;
-export declare function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput;
+export declare function utxoToInput(utxo: UnspentOutput): TxInput;
 export declare class OrdTransaction {
     inputs: TxInput[];
     outputs: (TxOutput | OpReturnOutput)[];
@@ -64,7 +65,7 @@ export declare class OrdTransaction {
     private network;
     private feeRate;
     private pubkey;
-    constructor(wallet: any, network: any, pubkey: string, feeRate?: number);
+    constructor(wallet: any, network: any, feeRate?: number);
     initBitcoin(): Promise<void>;
     setChangeAddress(address: string): void;
     addInput(utxo: UnspentOutput): void;

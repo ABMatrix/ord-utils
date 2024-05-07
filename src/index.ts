@@ -1,6 +1,5 @@
 import { initWasm } from "../packages/tiny-secp256k1/lib";
 import {
-  AddressType,
   InternalTransaction,
   OrdTransaction,
   UnspentOutput,
@@ -25,7 +24,6 @@ export async function createSendBTC({
   changeAddress,
   receiverToPayFee,
   feeRate,
-  pubkey,
   dump,
   data,
   txInfo,
@@ -38,12 +36,11 @@ export async function createSendBTC({
   changeAddress: string;
   receiverToPayFee?: boolean;
   feeRate?: number;
-  pubkey: string;
   dump?: boolean;
   data?: string;
   txInfo?: InternalTransaction;
 }) {
-  const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
+  const tx = new OrdTransaction(wallet, network, feeRate);
   await tx.initBitcoin();
   tx.setChangeAddress(changeAddress);
 
@@ -146,7 +143,6 @@ export async function createSendOrd({
   wallet,
   network,
   changeAddress,
-  pubkey,
   feeRate,
   outputValue,
   dump,
@@ -159,14 +155,13 @@ export async function createSendOrd({
   wallet: any;
   network: any;
   changeAddress: string;
-  pubkey: string;
   feeRate?: number;
   outputValue: number;
   dump?: boolean;
   data?: string;
   txInfo?: InternalTransaction;
 }) {
-  const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
+  const tx = new OrdTransaction(wallet, network, feeRate);
   await tx.initBitcoin();
   tx.setChangeAddress(changeAddress);
 
@@ -277,7 +272,6 @@ export async function createSendMultiOrds({
   wallet,
   network,
   changeAddress,
-  pubkey,
   feeRate,
   dump,
   data,
@@ -293,13 +287,12 @@ export async function createSendMultiOrds({
   wallet: any;
   network: any;
   changeAddress: string;
-  pubkey: string;
   feeRate?: number;
   dump?: boolean;
   data?: string | string[];
   txInfo?: InternalTransaction;
 }) {
-  const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
+  const tx = new OrdTransaction(wallet, network, feeRate);
   await tx.initBitcoin();
   tx.setChangeAddress(changeAddress);
 
@@ -406,7 +399,6 @@ export async function createSendMultiBTC({
   network,
   changeAddress,
   feeRate,
-  pubkey,
   dump,
   data,
   txInfo,
@@ -420,12 +412,11 @@ export async function createSendMultiBTC({
   network: any;
   changeAddress: string;
   feeRate?: number;
-  pubkey: string;
   dump?: boolean;
   data?: string;
   txInfo?: InternalTransaction;
 }) {
-  const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
+  const tx = new OrdTransaction(wallet, network, feeRate);
   await tx.initBitcoin();
   tx.setChangeAddress(changeAddress);
 
@@ -511,7 +502,6 @@ export async function createSendRunes({
   network,
   changeAddress,
   feeRate,
-  pubkey,
   dump,
   data,
   runestone,
@@ -526,13 +516,12 @@ export async function createSendRunes({
   network: any;
   changeAddress: string;
   feeRate?: number;
-  pubkey: string;
   dump?: boolean;
   data?: string;
   runestone?: string;
   txInfo?: InternalTransaction;
 }) {
-  const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
+  const tx = new OrdTransaction(wallet, network, feeRate);
   await tx.initBitcoin();
   tx.setChangeAddress(changeAddress);
 
@@ -627,7 +616,6 @@ export async function inscribe({
   inscription,
   wallet,
   network,
-  pubkey,
   feeRate,
   changeAddress,
   dump,
@@ -637,7 +625,6 @@ export async function inscribe({
   inscription: { body: Buffer; contentType: string };
   wallet: any;
   network: any;
-  pubkey: string;
   changeAddress: string;
   feeRate: number;
   dump: boolean;
@@ -685,14 +672,13 @@ export async function inscribe({
     toAddress: receiveAddress,
     toAmount: UTXO_DUST + txSize * feeRate,
     wallet,
-    pubkey,
     network,
     feeRate,
     changeAddress,
     dump: true,
   });
 
-  const tx = new OrdTransaction(wallet, network, pubkey, feeRate);
+  const tx = new OrdTransaction(wallet, network, feeRate);
   const txid = await wallet.pushPsbt(fundPsbt.toHex());
   await new Promise((resolve) => setTimeout(resolve, 1000));
 

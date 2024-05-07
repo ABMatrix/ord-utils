@@ -35,6 +35,7 @@ export interface UnspentOutput {
   scriptPk: string;
   addressType: AddressType;
   address: string;
+  pubkey: string;
   ords: {
     id: string;
     offset: number;
@@ -98,7 +99,7 @@ function getAddressOutputSize(output) {
 export const toXOnly = (pubKey: Buffer) =>
   pubKey.length === 32 ? pubKey : pubKey.slice(1, 33);
 
-export function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput {
+export function utxoToInput(utxo: UnspentOutput): TxInput {
   if (
     utxo.addressType === AddressType.P2TR ||
     utxo.addressType === AddressType.M44_P2TR
@@ -110,7 +111,7 @@ export function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput {
         value: utxo.satoshis,
         script: Buffer.from(utxo.scriptPk, "hex"),
       },
-      tapInternalKey: toXOnly(publicKey),
+      tapInternalKey: toXOnly(Buffer.from(utxo.pubkey, 'hex')),
     };
     return {
       data,
@@ -146,7 +147,7 @@ export function utxoToInput(utxo: UnspentOutput, publicKey: Buffer): TxInput {
       utxo,
     };
   } else if (utxo.addressType === AddressType.P2SH_P2WPKH) {
-    const redeemData = bitcoin.payments.p2wpkh({ pubkey: publicKey });
+    const redeemData = bitcoin.payments.p2wpkh({ pubkey: Buffer.from(utxo.pubkey, 'hex')});
     const data = {
       hash: utxo.txId,
       index: utxo.outputIndex,
@@ -173,10 +174,9 @@ export class OrdTransaction {
   private feeRate: number;
   private pubkey: string;
 
-  constructor(wallet: any, network: any, pubkey: string, feeRate?: number) {
+  constructor(wallet: any, network: any, feeRate?: number) {
     this.wallet = wallet;
     this.network = network;
-    this.pubkey = pubkey;
     this.feeRate = feeRate || 5;
   }
 
@@ -190,7 +190,7 @@ export class OrdTransaction {
   }
 
   addInput(utxo: UnspentOutput) {
-    this.inputs.push(utxoToInput(utxo, Buffer.from(this.pubkey, "hex")));
+    this.inputs.push(utxoToInput(utxo));
   }
 
   getTotalInput() {
@@ -294,8 +294,14 @@ export class OrdTransaction {
 
   async createSignedPsbt(txInfo?: InternalTransaction) {
     const psbt = new bitcoin.Psbt({ network: this.network });
+    const signInputs: any = {}
     for(let i = 0; i < this.inputs.length; i++) {
       let v = this.inputs[i];
+      if (signInputs[v.utxo.address]) {
+        signInputs[v.utxo.address].push(i);
+      } else {
+        signInputs[v.utxo.address] = [i];
+      }
       if (v.utxo.addressType === AddressType.P2PKH) {
         const txApiUrl =
           `https://mempool.space${
@@ -329,9 +335,13 @@ export class OrdTransaction {
     });
     const res = await this.wallet.signPsbt(
       psbt.toBuffer().toString("hex"),
-      txInfo
+      {
+        autoFinalized: false,
+        signInputs
+      }
     );
-    return bitcoin.Psbt.fromHex(res, { network: this.network });
+    const signedPsbt = bitcoin.Psbt.fromHex(res, { network: this.network });
+    return signedPsbt.finalizeAllInputs();
   }
 
   async createPsbt() {

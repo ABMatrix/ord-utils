@@ -1,6 +1,6 @@
 {
   "name": "@safematrix/ord-utils",
-  "version": "0.4.2",
+  "version": "0.4.4",
   "description": "Ordinals Utils",
   "keywords": [
     "bitcoin",

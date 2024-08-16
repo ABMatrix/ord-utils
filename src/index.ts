@@ -534,6 +534,7 @@ export async function createSendRunes({
       nonRunesUtxos.push(v);
     }
   });
+  if (runestone) tx.addRunestone(runestone);
   for (let i = 0; i < runesUtxos.length; i++) {
     const runeUtxo = runesUtxos[i];
     // if (runeUtxo.runes.length > 1) {
@@ -549,7 +550,6 @@ export async function createSendRunes({
   });
 
   if (data) tx.addOpReturnOutput(data);
-  if (runestone) tx.addRunestone(runestone);
 
   const outputAmount = tx.getTotalOutput();
 

@@ -341,7 +341,11 @@ export class OrdTransaction {
       }
     );
     const signedPsbt = bitcoin.Psbt.fromHex(res, { network: this.network });
-    return signedPsbt.finalizeAllInputs();
+    try {
+      return signedPsbt.finalizeAllInputs();
+    } catch (_) {
+      return signedPsbt;
+    }
   }
 
   async createPsbt() {

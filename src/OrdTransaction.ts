@@ -1,5 +1,5 @@
 import { UTXO_DUST } from "./OrdUnspendOutput";
-import * as bitcoin from "bitcoinjs-lib-mpc";
+import * as bitcoin from "bitcoinjs-lib";
 
 import { initWasm } from "../packages/tiny-secp256k1";
 interface TxInput {

@@ -1,8 +1,7 @@
 /// <reference types="node" />
 import { InternalTransaction, UnspentOutput } from "./OrdTransaction";
-import * as bitcoin from "bitcoinjs-lib-mpc";
+import * as bitcoin from "bitcoinjs-lib";
 export * from './utils';
-export { initWasm } from "../packages/tiny-secp256k1/lib";
 export declare function createSendBTC({ utxos, toAddress, toAmount, wallet, network, changeAddress, receiverToPayFee, feeRate, dump, data, txInfo, }: {
     utxos: UnspentOutput[];
     toAddress: string;

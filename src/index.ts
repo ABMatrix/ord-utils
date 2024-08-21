@@ -7,13 +7,11 @@ import {
 } from "./OrdTransaction";
 import { UTXO_DUST } from "./OrdUnspendOutput";
 import { satoshisToAmount, witnessStackToScriptWitness } from "./utils";
-import * as bitcoin from "bitcoinjs-lib-mpc";
+import * as bitcoin from "bitcoinjs-lib";
 import BIP32Factory from "bip32";
 
 export * from './utils'
 const rng = require("randombytes");
-
-export { initWasm } from "../packages/tiny-secp256k1/lib";
 
 export async function createSendBTC({
   utxos,
@@ -784,7 +782,7 @@ export async function inscribeWithOneStep({
   });
   psbt.addOutput({ value: UTXO_DUST, address });
 
-  await psbt.signAllInputsAsync(wallet.signer, {to: address, value: UTXO_DUST.toString()});
+  await psbt.signAllInputsAsync(wallet.signer);
   // const customFinalizer = (_inputIndex: number, input: any) => {
   //   console.log({input});
   //   const scriptSolution = [input.tapScriptSig[0].signature];

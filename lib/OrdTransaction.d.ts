@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import * as bitcoin from "bitcoinjs-lib-mpc";
+import * as bitcoin from "bitcoinjs-lib";
 interface TxInput {
     data: {
         hash: string;

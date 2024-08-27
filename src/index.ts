@@ -1,6 +1,5 @@
 import { initWasm } from "../packages/tiny-secp256k1/lib";
 import {
-  InternalTransaction,
   OrdTransaction,
   UnspentOutput,
   toXOnly,
@@ -8,10 +7,11 @@ import {
 import { UTXO_DUST } from "./OrdUnspendOutput";
 import { satoshisToAmount, witnessStackToScriptWitness } from "./utils";
 import * as bitcoin from "bitcoinjs-lib";
+import * as rng from "randombytes";
 import BIP32Factory from "bip32";
 
+export { initWasm } from "../packages/tiny-secp256k1/lib";
 export * from './utils'
-const rng = require("randombytes");
 
 export async function createSendBTC({
   utxos,
@@ -24,7 +24,6 @@ export async function createSendBTC({
   feeRate,
   dump,
   data,
-  txInfo,
 }: {
   utxos: UnspentOutput[];
   toAddress: string;
@@ -36,7 +35,6 @@ export async function createSendBTC({
   feeRate?: number;
   dump?: boolean;
   data?: string;
-  txInfo?: InternalTransaction;
 }) {
   const tx = new OrdTransaction(wallet, network, feeRate);
   await tx.initBitcoin();
@@ -126,7 +124,7 @@ export async function createSendBTC({
     }
   }
 
-  const psbt = await tx.createSignedPsbt(txInfo);
+  const psbt = await tx.createSignedPsbt();
   if (dump) {
     tx.dumpTx(psbt);
   }
@@ -145,7 +143,6 @@ export async function createSendOrd({
   outputValue,
   dump,
   data,
-  txInfo,
 }: {
   utxos: UnspentOutput[];
   toAddress: string;
@@ -157,7 +154,6 @@ export async function createSendOrd({
   outputValue: number;
   dump?: boolean;
   data?: string;
-  txInfo?: InternalTransaction;
 }) {
   const tx = new OrdTransaction(wallet, network, feeRate);
   await tx.initBitcoin();
@@ -254,7 +250,7 @@ export async function createSendOrd({
       );
     }
   }
-  const psbt = await tx.createSignedPsbt(txInfo);
+  const psbt = await tx.createSignedPsbt();
   if (dump) {
     tx.dumpTx(psbt);
   }
@@ -273,7 +269,6 @@ export async function createSendMultiOrds({
   feeRate,
   dump,
   data,
-  txInfo,
 }: {
   utxos: UnspentOutput[];
   toAddress: string;
@@ -288,7 +283,6 @@ export async function createSendMultiOrds({
   feeRate?: number;
   dump?: boolean;
   data?: string | string[];
-  txInfo?: InternalTransaction;
 }) {
   const tx = new OrdTransaction(wallet, network, feeRate);
   await tx.initBitcoin();
@@ -382,7 +376,7 @@ export async function createSendMultiOrds({
     tx.removeChangeOutput();
   }
 
-  const psbt = await tx.createSignedPsbt(txInfo);
+  const psbt = await tx.createSignedPsbt();
   if (dump) {
     tx.dumpTx(psbt);
   }
@@ -399,7 +393,6 @@ export async function createSendMultiBTC({
   feeRate,
   dump,
   data,
-  txInfo,
 }: {
   utxos: UnspentOutput[];
   receivers: {
@@ -412,7 +405,6 @@ export async function createSendMultiBTC({
   feeRate?: number;
   dump?: boolean;
   data?: string;
-  txInfo?: InternalTransaction;
 }) {
   const tx = new OrdTransaction(wallet, network, feeRate);
   await tx.initBitcoin();
@@ -485,7 +477,7 @@ export async function createSendMultiBTC({
     tx.removeChangeOutput();
   }
 
-  const psbt = await tx.createSignedPsbt(txInfo);
+  const psbt = await tx.createSignedPsbt();
   if (dump) {
     tx.dumpTx(psbt);
   }
@@ -544,7 +536,6 @@ export async function createSendMaxBTC({
 
   const outputAmount = tx.getTotalOutput();
 
-  let tmpSum = tx.getTotalInput();
   if (nonOrdUtxos.length === 0) {
     throw new Error("Balance not enough");
   }
@@ -552,6 +543,7 @@ export async function createSendMaxBTC({
       const nonOrdUtxo = nonOrdUtxos[i];
       tx.addInput(nonOrdUtxo);
   }
+  const tmpSum = tx.getTotalInput();
   const fee = await tx.calNetworkFee();
   const left = tmpSum - outputAmount - fee;
   if(left < UTXO_DUST) {
@@ -562,12 +554,12 @@ export async function createSendMaxBTC({
     );      
   }
 
-   tx.outputs.find(o => o.value === 0)!.value  = left;
+  tx.outputs.find(o => o.value === 0)!.value  = left;
 
-  const unspent = tx.getUnspent();
-  if (unspent === 0) {
-    throw new Error("Balance not enough to pay network fee.");
-  }
+  // const unspent = tx.getUnspent();
+  // if (unspent === 0) {
+  //   throw new Error("Balance not enough to pay network fee.");
+  // }
 
   const psbt = await tx.createSignedPsbt();
   if (dump) {
@@ -624,7 +616,6 @@ export async function calculateMaxBtc({
 
   const outputAmount = tx.getTotalOutput();
 
-  let tmpSum = tx.getTotalInput();
   if (nonOrdUtxos.length === 0) {
     throw new Error("Balance not enough");
   }
@@ -632,17 +623,18 @@ export async function calculateMaxBtc({
       const nonOrdUtxo = nonOrdUtxos[i];
       tx.addInput(nonOrdUtxo);
   }
+  const tmpSum = tx.getTotalInput();
   const fee = await tx.calNetworkFee();
   const left = tmpSum - outputAmount - fee;
   if(left < UTXO_DUST) {
     throw new Error(
-      `Balance not enough. Need ${satoshisToAmount(
+      `At least ${satoshisToAmount(
         outputAmount + fee
-      )} BTC as network fee, but only ${satoshisToAmount(tmpSum)} BTC.`
+      )} BTC.`
     );      
   }
-
-  return left
+  
+  return fee
 }
 
 export async function createSendRunes({
@@ -655,7 +647,6 @@ export async function createSendRunes({
   dump,
   data,
   runestone,
-  txInfo,
 }: {
   utxos: UnspentOutput[];
   receivers: {
@@ -669,7 +660,6 @@ export async function createSendRunes({
   dump?: boolean;
   data?: string;
   runestone?: string;
-  txInfo?: InternalTransaction;
 }) {
   const tx = new OrdTransaction(wallet, network, feeRate);
   await tx.initBitcoin();
@@ -752,7 +742,7 @@ export async function createSendRunes({
     tx.removeChangeOutput();
   }
 
-  const psbt = await tx.createSignedPsbt(txInfo);
+  const psbt = await tx.createSignedPsbt();
   if (dump) {
     tx.dumpTx(psbt);
   }

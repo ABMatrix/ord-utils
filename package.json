@@ -1,18 +1,18 @@
 {
   "name": "@safematrix/ord-utils",
-  "version": "0.5.0-beta.1",
+  "version": "0.5.0-beta.5",
   "description": "Ordinals Utils",
   "keywords": [
     "bitcoin",
     "keyring"
   ],
-  "homepage": "https://github.com/unisat-wallet/ord-utils#readme",
+  "homepage": "https://github.com/ABMatrix/ord-utils#readme",
   "bugs": {
-    "url": "https://github.com/unisat-wallet/ord-utils/issues"
+    "url": "https://github.com/ABMatrix/ord-utils/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/unisat-wallet/ord-utils.git"
+    "url": "https://github.com/ABMatrix/ord-utils.git"
   },
   "author": "Stone",
   "license": "ISC",

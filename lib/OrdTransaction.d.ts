@@ -1,4 +1,5 @@
 /// <reference types="node" />
+/// <reference types="node" />
 import * as bitcoin from "bitcoinjs-lib";
 interface TxInput {
     data: {
@@ -83,11 +84,11 @@ export declare class OrdTransaction {
     getChangeAmount(): number;
     removeChangeOutput(): void;
     removeRecentOutputs(count: number): void;
-    createSignedPsbt(txInfo?: InternalTransaction): Promise<bitcoin.Psbt>;
+    createSignedPsbt(txInfo?: InternalTransaction): Promise<any>;
     createPsbt(): Promise<bitcoin.Psbt>;
     generate(autoAdjust: boolean): Promise<{
-        fee: number;
-        rawtx: string;
+        fee: any;
+        rawtx: any;
         toSatoshis: number;
         estimateFee: number;
     }>;

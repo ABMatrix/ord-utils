@@ -1,7 +1,8 @@
 /// <reference types="node" />
+/// <reference types="node" />
 import { UnspentOutput } from "./OrdTransaction";
 import * as bitcoin from "bitcoinjs-lib";
-export { initWasm } from "../packages/tiny-secp256k1/lib";
+export { initWasm } from "ord-utils-tiny-secp256k1";
 export * from './utils';
 export declare function createSendBTC({ utxos, toAddress, toAmount, wallet, network, changeAddress, receiverToPayFee, feeRate, dump, data, }: {
     utxos: UnspentOutput[];
@@ -14,7 +15,7 @@ export declare function createSendBTC({ utxos, toAddress, toAmount, wallet, netw
     feeRate?: number;
     dump?: boolean;
     data?: string;
-}): Promise<bitcoin.Psbt>;
+}): Promise<any>;
 export declare function createSendOrd({ utxos, toAddress, toOrdId, wallet, network, changeAddress, feeRate, outputValue, dump, data, }: {
     utxos: UnspentOutput[];
     toAddress: string;
@@ -26,7 +27,7 @@ export declare function createSendOrd({ utxos, toAddress, toOrdId, wallet, netwo
     outputValue: number;
     dump?: boolean;
     data?: string;
-}): Promise<bitcoin.Psbt>;
+}): Promise<any>;
 export declare function createSendMultiOrds({ utxos, toAddress, toOrdIds, receivers, wallet, network, changeAddress, feeRate, dump, data, }: {
     utxos: UnspentOutput[];
     toAddress: string;
@@ -41,7 +42,7 @@ export declare function createSendMultiOrds({ utxos, toAddress, toOrdIds, receiv
     feeRate?: number;
     dump?: boolean;
     data?: string | string[];
-}): Promise<bitcoin.Psbt>;
+}): Promise<any>;
 export declare function createSendMultiBTC({ utxos, receivers, wallet, network, changeAddress, feeRate, dump, data, }: {
     utxos: UnspentOutput[];
     receivers: {
@@ -54,7 +55,7 @@ export declare function createSendMultiBTC({ utxos, receivers, wallet, network, 
     feeRate?: number;
     dump?: boolean;
     data?: string;
-}): Promise<bitcoin.Psbt>;
+}): Promise<any>;
 export declare function createSendMaxBTC({ utxos, receivers, wallet, network, changeAddress, feeRate, dump, data, }: {
     utxos: UnspentOutput[];
     receivers: {
@@ -67,7 +68,7 @@ export declare function createSendMaxBTC({ utxos, receivers, wallet, network, ch
     feeRate?: number;
     dump?: boolean;
     data?: string;
-}): Promise<bitcoin.Psbt>;
+}): Promise<any>;
 export declare function calculateMaxBtc({ utxos, receivers, network, changeAddress, feeRate, data, }: {
     utxos: UnspentOutput[];
     receivers: {
@@ -92,7 +93,7 @@ export declare function createSendRunes({ utxos, receivers, wallet, network, cha
     dump?: boolean;
     data?: string;
     runestone?: string;
-}): Promise<bitcoin.Psbt>;
+}): Promise<any>;
 export declare function inscribe({ address, utxos, inscription, wallet, network, feeRate, changeAddress, dump, }: {
     address: string;
     utxos: UnspentOutput[];

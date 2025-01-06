@@ -202,8 +202,8 @@ export class OrdTransaction {
 
   getTotalOutput() {
     return this.outputs.reduce((pre, cur) => pre + cur.value, 0);
-  }
 
+  }
   getUnspent() {
     return this.getTotalInput() - this.getTotalOutput();
   }
@@ -303,16 +303,22 @@ export class OrdTransaction {
         signInputs[v.utxo.address] = [i];
       }
       if (v.utxo.addressType === AddressType.P2PKH) {
-        const txApiUrl =
-          `https://mempool.space${
-            this.network.bech32 === bitcoin.networks.bitcoin.bech32
-              ? ""
-              : this.network.bech32 === bitcoin.networks.testnet.bech32
-              ? "/testnet"
-              : "/signet"
-          }/api/tx/` +
-          v.utxo.txId +
-          "/hex";
+        let txApiUrl: string;
+        // Dogecoin support
+        if( [0x9e, 0xf1].includes(this.network.wif) ) {
+          txApiUrl = `https://test-doge-electrs.bool.network/tx/${v.utxo.txId}/hex`;
+        } else {
+          txApiUrl =
+            `https://mempool.space${
+              this.network.bech32 === bitcoin.networks.bitcoin.bech32
+                ? ""
+                : this.network.bech32 === bitcoin.networks.testnet.bech32
+                ? "/testnet"
+                : "/signet"
+            }/api/tx/` +
+            v.utxo.txId +
+            "/hex";
+        }
         const response = await fetch(txApiUrl, {
           method: "GET",
           mode: "cors",
@@ -340,6 +346,10 @@ export class OrdTransaction {
         signInputs
       }
     );
+    // For mydoge wallet, no need to finalize
+    if(this.wallet.mydoge) {
+      return res;
+    }
     const signedPsbt = bitcoin.Psbt.fromHex(res, { network: this.network });
     try {
       return signedPsbt.finalizeAllInputs();

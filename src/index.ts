@@ -1,4 +1,4 @@
-import { initWasm } from "../packages/tiny-secp256k1/lib";
+import { initWasm } from "ord-utils-tiny-secp256k1";
 import {
   OrdTransaction,
   UnspentOutput,
@@ -10,7 +10,7 @@ import * as bitcoin from "bitcoinjs-lib";
 import * as rng from "randombytes";
 import BIP32Factory from "bip32";
 
-export { initWasm } from "../packages/tiny-secp256k1/lib";
+export { initWasm } from "ord-utils-tiny-secp256k1";
 export * from './utils'
 
 export async function createSendBTC({
@@ -478,6 +478,7 @@ export async function createSendMultiBTC({
   }
 
   const psbt = await tx.createSignedPsbt();
+  console.log({ psbt })
   if (dump) {
     tx.dumpTx(psbt);
   }

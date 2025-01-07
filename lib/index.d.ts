@@ -1,8 +1,4 @@
-/// <reference types="node" />
-/// <reference types="node" />
 import { UnspentOutput } from "./OrdTransaction";
-import * as bitcoin from "bitcoinjs-lib";
-export { initWasm } from "ord-utils-tiny-secp256k1";
 export * from './utils';
 export declare function createSendBTC({ utxos, toAddress, toAmount, wallet, network, changeAddress, receiverToPayFee, feeRate, dump, data, }: {
     utxos: UnspentOutput[];
@@ -13,18 +9,6 @@ export declare function createSendBTC({ utxos, toAddress, toAmount, wallet, netw
     changeAddress: string;
     receiverToPayFee?: boolean;
     feeRate?: number;
-    dump?: boolean;
-    data?: string;
-}): Promise<any>;
-export declare function createSendOrd({ utxos, toAddress, toOrdId, wallet, network, changeAddress, feeRate, outputValue, dump, data, }: {
-    utxos: UnspentOutput[];
-    toAddress: string;
-    toOrdId: string;
-    wallet: any;
-    network: any;
-    changeAddress: string;
-    feeRate?: number;
-    outputValue: number;
     dump?: boolean;
     data?: string;
 }): Promise<any>;
@@ -80,44 +64,3 @@ export declare function calculateMaxBtc({ utxos, receivers, network, changeAddre
     feeRate?: number;
     data?: string;
 }): Promise<number>;
-export declare function createSendRunes({ utxos, receivers, wallet, network, changeAddress, feeRate, dump, data, runestone, }: {
-    utxos: UnspentOutput[];
-    receivers: {
-        address: string;
-        amount: number;
-    }[];
-    wallet: any;
-    network: any;
-    changeAddress: string;
-    feeRate?: number;
-    dump?: boolean;
-    data?: string;
-    runestone?: string;
-}): Promise<any>;
-export declare function inscribe({ address, utxos, inscription, wallet, network, feeRate, changeAddress, dump, }: {
-    address: string;
-    utxos: UnspentOutput[];
-    inscription: {
-        body: Buffer;
-        contentType: string;
-    };
-    wallet: any;
-    network: any;
-    changeAddress: string;
-    feeRate: number;
-    dump: boolean;
-}): Promise<bitcoin.Psbt>;
-export declare function inscribeWithOneStep({ address, utxos, inscription, wallet, network, pubkey, feeRate, }: {
-    address: string;
-    utxos: UnspentOutput[];
-    inscription: {
-        body: Buffer;
-        contentType: string;
-    };
-    wallet: any;
-    network: any;
-    pubkey: string;
-    changeAddress: string;
-    feeRate: number;
-    dump: boolean;
-}): Promise<bitcoin.Psbt>;

@@ -1,7 +1,6 @@
 import { UTXO_DUST } from "./OrdUnspendOutput";
 import * as bitcoin from "bitcoinjs-lib";
 
-import { initWasm } from "ord-utils-tiny-secp256k1";
 interface TxInput {
   data: {
     hash: string;
@@ -178,11 +177,6 @@ export class OrdTransaction {
     this.wallet = wallet;
     this.network = network;
     this.feeRate = feeRate || 5;
-  }
-
-  async initBitcoin() {
-    const ecc = await initWasm();
-    bitcoin.initEccLib(ecc);
   }
 
   setChangeAddress(address: string) {

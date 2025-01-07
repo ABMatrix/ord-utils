@@ -67,7 +67,6 @@ export declare class OrdTransaction {
     private feeRate;
     private pubkey;
     constructor(wallet: any, network: any, feeRate?: number);
-    initBitcoin(): Promise<void>;
     setChangeAddress(address: string): void;
     addInput(utxo: UnspentOutput): void;
     getTotalInput(): number;

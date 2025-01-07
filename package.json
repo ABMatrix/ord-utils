@@ -1,6 +1,6 @@
 {
   "name": "@safematrix/ord-utils",
-  "version": "0.5.1",
+  "version": "0.5.3",
   "description": "Ordinals Utils",
   "keywords": [
     "bitcoin",
@@ -21,8 +21,7 @@
   "types": "lib/index.d.ts",
   "files": [
     "/es",
-    "/lib",
-    "/packages"
+    "/lib"
   ],
   "scripts": {
     "build": "npm run build:cjs && npm run build:esm",

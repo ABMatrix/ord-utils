@@ -1,7 +1,7 @@
 import { UTXO_DUST } from "./OrdUnspendOutput";
 import * as bitcoin from "bitcoinjs-lib";
 
-import { initWasm } from "../packages/tiny-secp256k1";
+import { initWasm } from "ord-utils-tiny-secp256k1";
 interface TxInput {
   data: {
     hash: string;
